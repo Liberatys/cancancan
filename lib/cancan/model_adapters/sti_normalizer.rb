@@ -6,7 +6,7 @@ module CanCan
       class << self
         def normalize(rules)
           rules_cache = []
-          rules.delete_if.with_index do |rule, _index|
+          rules.delete_if do |rule|
             subjects = rule.subjects.select do |subject|
               next if subject == :all || subject.descends_from_active_record?
 
