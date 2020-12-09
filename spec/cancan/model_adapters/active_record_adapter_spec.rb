@@ -731,5 +731,61 @@ WHERE "articles"."published" = #{false_v} AND "articles"."secret" = #{true_v}))
       expect(ability).to be_able_to(:read, motorbike)
       expect(ability).to be_able_to(:read, Suzuki.new)
     end
+  context "conflicting child definition" do
+
+    before do
+
+      ActiveRecord::Schema.define do
+        create_table(:brands) do |t|
+          t.string :name
+        end
+
+        create_table(:vehicles) do |t|
+          t.string :wow
+        end
+
+        create_table(:cars) do |t|
+          t.string :wow
+        end
+
+        create_table(:motorbikes) do |t|
+          t.string :wow
+        end
+      end
+
+      class ApplicationRecord < ActiveRecord::Base
+        self.abstract_class = true
+      end
+
+      class Vehicle < ApplicationRecord
+
+      end
+
+      class Car < Vehicle
+
+      end
+
+      class Motorbike < Vehicle
+
+      end
+    end
+
+    it "rules" do
+      u1 = User.create!(name: "pippo")
+      car = Car.create!
+      motorbike = Motorbike.create!
+
+      ability = Ability.new(u1)
+      ability.can :read, Vehicle
+      ability.cannot :read, Motorbike
+
+      expect(ability).to be_able_to(:read, car)
+      expect(ability).to_not be_able_to(:read, motorbike)
+
+      expect(Vehicle.accessible_by(ability)).to match_array([car])
+      expect(Car.accessible_by(ability)).to match_array([car])
+      expect(Motorbike.accessible_by(ability)).to match_array([])
+      expect(Suzuki.accessible_by(ability)).to match_array([])
+    end
   end
 end
